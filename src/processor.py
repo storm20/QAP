@@ -6,7 +6,7 @@ from netsquid.components.qprocessor import PhysicalInstruction
 from netsquid.qubits.operators import Operator
 
 def create_processor(num_parties,prob):
-    num_qubits = 4
+    num_qubits = num_parties
 #     print(f"Processor number of qubit: {num_qubits}")
 #     top = list(range(0,num_qubits))
 #     tuple_top = tuple(top)
