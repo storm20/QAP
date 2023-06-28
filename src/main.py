@@ -23,7 +23,7 @@ import csv
 
 
 
-def setup_protocol(network,nodes_num,list_length):
+def setup_protocol(network,nodes_num,list_length,prob):
     
     # print("=====================Setup Protocol=====================")
     
@@ -37,7 +37,7 @@ def setup_protocol(network,nodes_num,list_length):
     # print(nodes)
 
     
-    subprotocol = CSP(node=nodes[0],name=f"CSP{nodes[0].name}",num_nodes=nodes_num,list_length=list_length)
+    subprotocol = CSP(node=nodes[0],name=f"CSP{nodes[0].name}",num_nodes=nodes_num,list_length=list_length,prob=prob)
     # print(f"Add protocol {subprotocol.name} to node : { nodes[0].name}")
     protocol.add_subprotocol(subprotocol)
     
@@ -115,7 +115,7 @@ def network_setup(num_nodes,prob,node_distance=4e-3):
 
 def main(args):
     probs = np.linspace(0, 1, num=100) # error parameter probability 
-    # probs = [0]
+    # probs = [1]
 
     nodes_num = args.node_num
     list_length = args.list_length
@@ -137,60 +137,58 @@ def main(args):
     # round_sum = 0
     x=0
     data_error = []
-    # data_time = []
-    # dist = np.linspace(400,2000,10)
-    # data_bps = []
+    dist = np.linspace(400,2000,10)
+    data_bps = []
     while x < len(probs):
     # while x < len(dist):
 
         # network = network_setup(nodes_num,0,node_distance=dist[x])
         network = network_setup(nodes_num,probs[x],node_distance=4)
         
-        protocol = setup_protocol(network,nodes_num,list_length)
+        protocol = setup_protocol(network,nodes_num,list_length,probs[x])
         # print(f"Parameter lambda1: {p1}")
         # print(f"Parameter lambda2: {p2}")
         # print("===================== Simulation Starts =====================")
         error = []
+        data_time = []
         for m in tqdm(range(0, average), desc ="Progress:"):
         # for m in range(0,average):
             # global_var.sum = 0
             ns.sim_reset()
             protocol.reset()
             stats = ns.sim_run()
-            # time = (ns.util.simtools.sim_time(ns.SECOND))
+            time = (ns.util.simtools.sim_time(ns.SECOND))
             
             # print(ns.sim_time(ns.SECOND))
             # print(stats.data)
             # print(stats.summary())
             # print(global_var.data)
             
+            # Use this part to calculate error every 2 send data for validations (First version of paper)
             c = 0
             i = 0
-            while i < int(len(global_var.data)/2):
-                a = global_var.data[i][0] ^ global_var.data[i][1]
+            while i < (len(global_var.data)):
+                a = global_var.data[i][0] ^ global_var.data[i][1] # XOR operation -> 1 when different 0 when same
                 b = global_var.data[i+1][0] ^ global_var.data[i+1][1]
                 c = c + (a or b)
                 i = i+2
+            
+            # print((global_var.data))
+            
             # print(c)
-            z = (c/list_length*2)
+            # z = (c/list_length*2)
             # print(f'noise prob: {probs[x]} error: {z}')
-            error.append(z)
+            # error.append(z)
+            
+            # Use this part to calculate whole error 
+            temp_sum = 0
+            for i in range (len(global_var.data)):
+                if global_var.data[i][0] != global_var.data[i][1]:
+                    temp_sum +=1
+            z = temp_sum/list_length
+            # print(f"Error prob: {z}")
             # data_time.append(time)
-            
-            # name = list(stats.data.keys())[5] # get the quantum operation data from dictionary
-            
-            # for i in range (len(stats.data[name])):
-            #     if i ==0:
-            #         Uop = stats.data[name][i][1] # data is in tuple form, 0 index for its name, 1 index for its value
-            #     if i==1:
-            #         H = stats.data[name][i][1]
-            #     if i==2:
-            #         Vop = stats.data[name][i][1]
-            #     if i ==3:
-            #         Meas = stats.data[name][i][1]
-            # round_sum = round_sum + global_var.sum
-            # data = [m,global_var.sum,Uop,Vop,H,Meas]
-            
+            error.append(z)
             
             
             # f = open('data/'+file_name, 'a', encoding='UTF8', newline='')
@@ -216,32 +214,36 @@ def main(args):
             
         error_avr = sum(error) / len(error)
         data_error.append(error_avr)
+        
+        # Use below to calculate time or bit/sec
+        
         # time_avr = sum(data_time) / len(data_time)
         # bps = list_length/time_avr
         # data_bps.append(bps)
-        print(f"Prob: {probs[x]}  Error: {error_avr}")
+        # print(f"Prob: {probs[x]}  Error: {error_avr}")
         x = x+1
-        
+    
+    # Use below for distance vs bps data 
     # df = pd.DataFrame({'Distance': dist, 'Bps': data_bps})
-    # filename = "bps_data_n=15.csv"
+    # filename = "bps_data_n=4.csv"
     # df.to_csv(filename, index=False)
     
     
     df = pd.DataFrame({'X': probs, 'Y': data_error})
-    filename = "data_depol_n=4.csv"
+    print(df)
+    filename = "data_depol_n=15_nocombined_100.csv"
     df.to_csv(filename, index=False)
 
     
     
     # avrg_round = round_sum/(average*list_length)
     # print(f"total round: {round_sum} average round/list: {avrg_round} probability: {1/avrg_round}")
-    
     # print("Global list: ")
     # print(arr_result)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--node_num', type=int,default=4,help='Number of nodes for the protocol, must be power of 2 (e.g 2,4,8,...)')
+    parser.add_argument('--node_num', type=int,default=15,help='Number of nodes for the protocol, must be power of 2 (e.g 2,4,8,...)')
     parser.add_argument('--list_length', type=int,default=100,help='Number of length of a list in a single experiment')
     parser.add_argument('--num_exp', type=int,default=100,help='Number of experiments to be done')
     # parser.add_argument('--M', type=int,default=50,help='Number of M cycles, in order of tenth increment')

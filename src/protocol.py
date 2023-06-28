@@ -6,14 +6,14 @@ import random
 import numpy as np
 import global_var
 import pandas as pd
-
+from netsquid.qubits.qubitapi import *
 
 class CSP(NodeProtocol):
-    def __init__(self, node,name, num_nodes,list_length):
+    def __init__(self, node,name, num_nodes,list_length,prob):
         super().__init__(node, name)
         self.num_nodes = num_nodes
         self.list_length = list_length
-
+        self.prob = prob
 
     def run(self):
 #         print(f"Simulation start at {ns.sim_time(ns.MILLISECOND)} ms")
@@ -82,6 +82,16 @@ class CSP(NodeProtocol):
                 
             #Send all qubits to all nodes
             # print(list_quantum)
+            
+            # Global noise apply, comment if not used
+            # max_mix_state = (np.eye(2**qubit_number)/2**qubit_number)
+            # position = list(np.arange(0,qubit_number))
+            # qubit_temp = self.node.qmemory.pop(positions=position)
+            # # print(reduced_dm(qubit_temp))
+            # output_state = self.prob*(max_mix_state) + (1-self.prob)*reduced_dm(qubit_temp)
+            # assign_qstate(qubit_temp,output_state)
+            # self.node.qmemory.put(qubit_temp,position)
+            
             
             for i in range (len(list_quantum)):
                 qubit = self.node.qmemory.pop(positions=i+1)
@@ -204,6 +214,7 @@ class Users(NodeProtocol):
                     pub_data = np.random.binomial(1,0.5)
                 if (pub_data == 1):
                     yield self.node.qmemory.execute_program(encode_program)
+                # print(f"Published data: {pub_data}")
                 global_var.modify(pub_data,x,0)
                 x = x+1
             #Measure

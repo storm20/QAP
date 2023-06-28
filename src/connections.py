@@ -23,6 +23,7 @@ class QuantumConnection(Connection):
     def __init__(self, length, prob,name="QuantumConnection"):
         super().__init__(name=name)
         self.prob = prob
+        # self.prob = 0
         Model = DepolarNoiseModel(depolar_rate = self.prob,time_independent=True)
         # Model = DephaseNoiseModel(dephase_rate  = self.prob,time_independent=True)
         qchannel_a2b = QuantumChannel("qchannel_a2b", length=length,

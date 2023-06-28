@@ -12,7 +12,7 @@ class InitStateProgram(QuantumProgram):
     def program(self):
 #         self.num_qubits = int(np.log2(self.num_qubits))
         qubits = self.get_qubit_indices()
-#         print(qubits)
+        # print(qubits)
 #         print("Init qubits 0")
         self.apply(instr.INSTR_INIT, qubits) # Initialize all memory into 0 state
 #         print("Apply Hadamard")
